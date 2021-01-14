@@ -287,8 +287,8 @@ def train(train_dataset, val_dataset, model, epochs, batch_size, shuffle=True, s
     val_loss {v_loss:0.4f} train_acc {t_acc:0.4f} val_acc {v_acc:0.4f}"
 
     with tqdm(desc="epoch", total=epochs) as pbar_outer:
-        opt = torch.optim.AdamW(model.parameters()) # casual optimizer
-        scheduler = torch.optim.lr_scheduler.StepLR(opt, 3, 0.5) # Casual scheduler
+        opt = torch.optim.SGD(model.parameters(), lr= 1e-3) # casual optimizer
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min') # Casual scheduler
         criterion = nn.CrossEntropyLoss() 
 
         for epoch in range(epochs):
@@ -297,7 +297,7 @@ def train(train_dataset, val_dataset, model, epochs, batch_size, shuffle=True, s
             
             val_loss, val_acc = eval_epoch(model, val_loader, criterion)
             history.append((train_loss, train_acc, val_loss, val_acc))
-            scheduler.step()
+            scheduler.step(val_loss)
             pbar_outer.update(1)
             tqdm.write(log_template.format(ep=epoch+1, t_loss=train_loss,\
                                            v_loss=val_loss, t_acc=train_acc, v_acc=val_acc))
@@ -336,11 +336,15 @@ import copy
 model_pre_weights = copy.deepcopy(model.state_dict())
 torch.save(model_pre_weights, "path_to\\model_pre_weights.pth")
 
-history = train(new_train_dataset, val_dataset, model=model, epochs=30, batch_size=64) # training
+history = train(new_train_dataset, val_dataset, model=model, epochs=30, batch_size=32) # training
+
+import os
+os.listdir()
 
 # saving weights after training
 model_30epoch_weights = copy.deepcopy(model.state_dict())
-torch.save(model_30epoch_weights, "gdrive/My Drive/model_resnet50_30epoch_weights.pth")
+
+torch.save(model_30epoch_weights, "gdrive/My Drive/model_resnet50_60epoch_32batchsize_scheduller_reduceltonplateau_weights.pth")
 
 """Построим кривые обучения"""
 
@@ -444,4 +448,4 @@ mysubmit['Id'] = test_filenames
 
 mysubmit[f'Expected'] = preds
 
-mysubmit.to_csv('gdrive/My Drive/3.csv', index=False)
+mysubmit.to_csv('gdrive/My Drive/4.csv', index=False)
